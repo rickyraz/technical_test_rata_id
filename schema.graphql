@@ -1,0 +1,256 @@
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum Weekday {
+  SU
+  MO
+  TU
+  WE
+  TH
+  FR
+  SA
+}
+
+type ByDay {
+  ordinal: Int
+  day: Weekday!
+}
+
+type RecurrenceRule {
+  id: ID!
+  patient: Patient!
+  frequency: RecurrenceFrequency!
+  interval: Int! 
+  startDateTime: String!          # Full datetime base (ISO with time & timezone)
+  until: String                   # Exclusive end date
+  count: Int                      # Alternative to until
+  byDay: [ByDay]
+  byMonthDay: [Int]
+  byMonth: [Int]
+  byHour: [Int]
+  byMinute: [Int]
+  weekStart: Weekday
+  note: String
+  # Optional: full RRULE string for export/interop
+  rruleString: String
+}
+
+type Appointment {
+  id: ID!
+  patient: Patient!
+  startDateTime: String!
+  endDateTime: String!
+  note: String
+  recurrenceRule: RecurrenceRule    # Null jika one-time
+  recurrenceId: String              # Untuk exception: original start datetime (RECURRENCE-ID)
+  isException: Boolean              # True jika ini override dari rule
+}
+
+type Patient {
+  id: ID!
+  name: String!
+  phone: String
+  email: String
+  address: String
+  lastVisit: String       # Kunjungan terakhir
+  medicalHistory: String  # Alergi, penyakit, dll
+  
+  # Appointments - :
+
+  # nextAppointment | Single/null | Dashboard, quick infoFast (1 query)
+  nextAppointment: Appointment  # Appointment berikutnya
+  # List appointments - semua appointments dalam range
+  # appointments(from, to)ArrayCalendar, historyDepend on range
+  appointments(fromDate: String, toDate: String): [Appointment!]! # Expanded view
+  recurrenceRules: [RecurrenceRule!]!
+  
+  # Billing
+  outstandingBalance: Float  # Sisa tagihan
+  insuranceInfo: String      # Info asuransi
+  
+   # Metadata
+  createdAt: String!
+  updatedAt: String!
+}
+
+
+
+input ByDayInput {
+  ordinal: Int
+  day: Weekday!
+}
+
+input CreatePatientInput {
+  name: String!
+  dateOfBirth: String
+  phone: String
+  email: String
+  address: String
+  medicalHistory: String
+}
+
+input UpdatePatientInput {
+  name: String
+  dateOfBirth: String
+  phone: String
+  email: String
+  address: String
+  medicalHistory: String
+}
+
+type WorkflowStep {
+  id: ID!
+  name: String!
+  description: String
+  order: Int!
+}
+
+type DeleteResult {
+  success: Boolean!
+  message: String
+}
+
+# 3. RESULT TYPES (sebelum dipakai di Query)
+type PatientsResult {
+  patients: [Patient!]!
+  total: Int!
+}
+
+type AppointmentsResult {
+  appointments: [Appointment!]!
+  total: Int!
+}
+
+type WorkflowsResult {
+  workflows: [Workflow!]!
+  total: Int!
+}
+
+
+input CreateRecurrenceRuleInput {
+  patientId: ID!
+  frequency: RecurrenceFrequency!
+  interval: Int!
+  startDateTime: String!
+  until: String
+  count: Int
+  byDay: [ByDayInput]
+  byMonthDay: [Int]
+  byMonth: [Int]
+  byHour: [Int]
+  byMinute: [Int]
+  weekStart: Weekday
+  note: String
+}
+
+input UpdateRecurrenceRuleInput {
+  frequency: RecurrenceFrequency
+  interval: Int
+  startDateTime: String
+  until: String
+  count: Int
+  byDay: [ByDayInput]
+  byMonthDay: [Int]
+  byMonth: [Int]
+  byHour: [Int]
+  byMinute: [Int]
+  weekStart: Weekday
+  note: String
+}
+
+# ---
+
+input CreateOneTimeAppointmentInput {
+  patientId: ID!
+  startDateTime: String!
+  endDateTime: String!
+  note: String
+}
+
+input CreateExceptionAppointmentInput {
+  ruleId: ID!
+  originalStartDateTime: String!    # RECURRENCE-ID
+  newStartDateTime: String
+  newEndDateTime: String
+  note: String
+}
+
+# ---
+
+type Workflow {
+  id: ID!
+  name: String!
+  steps: [WorkflowStep!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input WorkflowStepInput {
+  name: String!
+  description: String
+  order: Int!
+}
+
+input CreateWorkflowInput {
+  name: String!
+  steps: [WorkflowStepInput!]!
+}
+
+input UpdateWorkflowInput {
+  name: String
+  steps: [WorkflowStepInput!]
+}
+
+# ----
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  STAFF
+}
+
+type User {
+  id: ID!
+  name: String!
+  role: UserRole!
+}
+
+
+
+# ---
+type Query {
+  # Patients
+  allPatients(search: String, limit: Int, offset: Int): PatientsResult!
+  patient(id: ID!): Patient
+  # Appointments
+  appointmentsByPatient(patientId: ID!, fromDate: String!, toDate: String!): AppointmentsResult!
+  # Workflows
+  allWorkflows(search: String, limit: Int, offset: Int): WorkflowsResult!
+  workflow(id: ID!): Workflow
+  # Auth
+  currentUser: User
+}
+
+type Mutation {
+  # Patients
+  createPatient(input: CreatePatientInput!): Patient!
+  updatePatient(id: ID!, input: UpdatePatientInput!): Patient!
+  deletePatient(id: ID!): DeleteResult!
+  
+  # Appointments
+  createRecurrenceRule(input: CreateRecurrenceRuleInput!): RecurrenceRule!
+  createOneTimeAppointment(input: CreateOneTimeAppointmentInput!): Appointment!
+  createExceptionForRule(input: CreateExceptionAppointmentInput!): Appointment!
+  updateRecurrenceRule(id: ID!, input: UpdateRecurrenceRuleInput!): RecurrenceRule!
+  deleteRecurrenceRule(id: ID!): DeleteResult!
+  deleteAppointment(id: ID!): DeleteResult!
+
+  # Workflows
+  createWorkflow(input: CreateWorkflowInput!): Workflow!
+  updateWorkflow(id: ID!, input: UpdateWorkflowInput!): Workflow!
+  deleteWorkflow(id: ID!): DeleteResult!
+}
