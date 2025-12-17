@@ -1,8 +1,3 @@
-/**
- * Appointment GraphQL Queries and Mutations
- * Handles both one-time appointments and recurring appointments
- */
-
 import { graphql } from "../graphql";
 
 // Mutation: Create one-time appointment

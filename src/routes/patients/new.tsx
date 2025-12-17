@@ -1,129 +1,71 @@
-/**
- * New Patient Form Page
- * Features:
- * - Form validation (basic client-side validation)
- * - Submit via GraphQL mutation
- * - Animated form with Motion One
- * - Redirects to patient detail after creation
- */
-
+import { revalidateLogic, useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ZodValidator } from "@tanstack/zod-form-adapter";
 import { ArrowLeft } from "lucide-react";
-import { animate } from "motion";
-import { useEffect, useRef, useState } from "react";
 import { useMutation } from "urql";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { Input } from "../../components/ui/Input";
+import { z } from "zod";
+import { Button } from "../../components/ui/button";
+import {
+	Card,
+	CardHeader,
+	CardPanel,
+	CardTitle,
+} from "../../components/ui/card";
+import { Field, FieldError, FieldLabel } from "../../components/ui/field";
+import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
 import { CreatePatientMutation } from "../../queries/patients";
 
 export const Route = createFileRoute("/patients/new")({
 	component: NewPatientPage,
 });
 
-interface FormData {
-	name: string;
-	dateOfBirth: string;
-	phone: string;
-	email: string;
-	address: string;
-	medicalHistory: string;
-}
-
-interface FormErrors {
-	name?: string;
-	email?: string;
-	phone?: string;
-}
+const patientSchema = z.object({
+	name: z.string().min(1, "Name is Mandatory"),
+	dateOfBirth: z.string(),
+	phone: z.string().regex(/^[\d\s\-+()]*$/, "Phone Number is invalid"),
+	email: z.email("Email Format is invalid"),
+	address: z.string(),
+	medicalHistory: z.string().nullish(),
+});
 
 function NewPatientPage() {
 	const navigate = useNavigate();
 	const [createResult, createPatient] = useMutation(CreatePatientMutation);
 
-	// Form state
-	const [formData, setFormData] = useState<FormData>({
-		name: "",
-		dateOfBirth: "",
-		phone: "",
-		email: "",
-		address: "",
-		medicalHistory: "",
-	});
-
-	const [errors, setErrors] = useState<FormErrors>({});
-
-	// Animation
-	const formRef = useRef<HTMLDivElement>(null);
-	useEffect(() => {
-		if (formRef.current) {
-			animate(
-				formRef.current,
-				{ opacity: [0, 1], y: [20, 0] },
-				{ duration: 0.4, easing: "ease-out" },
-			);
-		}
-	}, []);
-
-	// Validation logic
-	const validate = (): boolean => {
-		const newErrors: FormErrors = {};
-
-		if (!formData.name.trim()) {
-			newErrors.name = "Nama wajib diisi";
-		}
-
-		if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-			newErrors.email = "Format email tidak valid";
-		}
-
-		if (formData.phone && !/^[\d\s\-+()]+$/.test(formData.phone)) {
-			newErrors.phone = "Format telepon tidak valid";
-		}
-
-		setErrors(newErrors);
-		return Object.keys(newErrors).length === 0;
-	};
-
-	// Handle form submission
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-
-		if (!validate()) {
-			return;
-		}
-
-		// Submit via GraphQL mutation
-		const result = await createPatient({
-			input: {
-				name: formData.name,
-				dateOfBirth: formData.dateOfBirth || null,
-				phone: formData.phone || null,
-				email: formData.email || null,
-				address: formData.address || null,
-				medicalHistory: formData.medicalHistory || null,
-			},
-		});
-
-		if (result.data?.createPatient) {
-			// Navigate to patient detail page
-			navigate({
-				to: "/patients/$patientId",
-				params: { patientId: result.data.createPatient.id },
+	const form = useForm({
+		defaultValues: {
+			name: "",
+			dateOfBirth: "",
+			phone: "",
+			email: "",
+			address: "",
+			medicalHistory: "",
+		},
+		validationLogic: revalidateLogic(),
+		validators: {
+			onChange: patientSchema,
+		},
+		onSubmit: async ({ value }) => {
+			const result = await createPatient({
+				input: {
+					name: value.name,
+					dateOfBirth: value.dateOfBirth || null,
+					phone: value.phone || null,
+					email: value.email || null,
+					address: value.address || null,
+					medicalHistory: value.medicalHistory || null,
+				},
 			});
-		}
-	};
 
-	// Handle input change
-	const handleChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-	) => {
-		const { name, value } = e.target;
-		setFormData((prev) => ({ ...prev, [name]: value }));
-		// Clear error for this field
-		if (errors[name as keyof FormErrors]) {
-			setErrors((prev) => ({ ...prev, [name]: undefined }));
-		}
-	};
+			if (result.data?.createPatient) {
+				navigate({
+					to: "/patients/$patientId",
+					params: { patientId: result.data.createPatient.id },
+				});
+			}
+		},
+	});
 
 	return (
 		<div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -137,114 +79,408 @@ function NewPatientPage() {
 				Kembali ke Daftar
 			</Button>
 
-			<div ref={formRef}>
-				<Card>
-					<h1 className="text-2xl font-bold mb-6">Tambah Pasien Baru</h1>
+			<Card>
+				<CardHeader>
+					<CardTitle>Tambah Pasien Baru</CardTitle>
+				</CardHeader>
+				<CardPanel>
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							form.handleSubmit();
+						}}
+						className="space-y-6"
+					>
+						<form.Field name="name">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>Nama Lengkap *</FieldLabel>
+										<Input
+											id={field.name}
+											name={field.name}
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder="Masukkan nama lengkap"
+											aria-invalid={isInvalid}
+										/>
+										{isInvalid && (
+											<FieldError>
+												{field.state.meta.errors
+													.map((err) =>
+														typeof err === "string" ? err : err?.message,
+													)
+													.join(", ")}
+											</FieldError>
+										)}
+									</Field>
+								);
+							}}
+						</form.Field>
 
-					<form onSubmit={handleSubmit} className="space-y-6">
-						{/* Name - Required */}
-						<Input
-							label="Nama Lengkap *"
-							name="name"
-							value={formData.name}
-							onChange={handleChange}
-							error={errors.name}
-							placeholder="Masukkan nama lengkap"
-							required
-						/>
+						<form.Field name="dateOfBirth">
+							{(field) => (
+								<Field>
+									<FieldLabel htmlFor={field.name}>Tanggal Lahir</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										type="date"
+									/>
+								</Field>
+							)}
+						</form.Field>
 
-						{/* Date of Birth */}
-						<Input
-							label="Tanggal Lahir"
-							name="dateOfBirth"
-							type="date"
-							value={formData.dateOfBirth}
-							onChange={handleChange}
-						/>
+						<form.Field name="phone">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>Nomor Telepon</FieldLabel>
+										<Input
+											id={field.name}
+											name={field.name}
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											type="tel"
+											placeholder="+62 812 3456 7890"
+											aria-invalid={isInvalid}
+										/>
+										{isInvalid && (
+											<FieldError>
+												{field.state.meta.errors
+													.map((err) =>
+														typeof err === "string" ? err : err?.message,
+													)
+													.join(", ")}
+											</FieldError>
+										)}
+									</Field>
+								);
+							}}
+						</form.Field>
 
-						{/* Phone */}
-						<Input
-							label="Nomor Telepon"
-							name="phone"
-							type="tel"
-							value={formData.phone}
-							onChange={handleChange}
-							error={errors.phone}
-							placeholder="+62 812 3456 7890"
-						/>
+						<form.Field name="email">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
 
-						{/* Email */}
-						<Input
-							label="Email"
-							name="email"
-							type="email"
-							value={formData.email}
-							onChange={handleChange}
-							error={errors.email}
-							placeholder="email@example.com"
-						/>
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>Email</FieldLabel>
+										<Input
+											id={field.name}
+											name={field.name}
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											type="email"
+											placeholder="email@example.com"
+											aria-invalid={isInvalid}
+										/>
+										{isInvalid && (
+											<FieldError>
+												{field.state.meta.errors
+													.map((err) =>
+														typeof err === "string" ? err : err?.message,
+													)
+													.join(", ")}
+											</FieldError>
+										)}
+									</Field>
+								);
+							}}
+						</form.Field>
 
-						{/* Address */}
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								Alamat
-							</label>
-							<textarea
-								name="address"
-								value={formData.address}
-								onChange={handleChange}
-								className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-								rows={3}
-								placeholder="Masukkan alamat lengkap"
-							/>
-						</div>
+						<form.Field name="address">
+							{(field) => (
+								<Field>
+									<FieldLabel htmlFor={field.name}>Alamat</FieldLabel>
+									<Textarea
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										rows={3}
+										placeholder="Masukkan alamat lengkap"
+									/>
+								</Field>
+							)}
+						</form.Field>
 
-						{/* Medical History */}
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
-								Riwayat Medis
-							</label>
-							<textarea
-								name="medicalHistory"
-								value={formData.medicalHistory}
-								onChange={handleChange}
-								className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-								rows={4}
-								placeholder="Alergi, penyakit kronis, dll."
-							/>
-						</div>
+						<form.Field name="medicalHistory">
+							{(field) => (
+								<Field>
+									<FieldLabel htmlFor={field.name}>Riwayat Medis</FieldLabel>
+									<Textarea
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										rows={4}
+										placeholder="Alergi, penyakit kronis, dll."
+									/>
+								</Field>
+							)}
+						</form.Field>
 
-						{/* Error Display */}
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.isSubmitting]}
+						>
+							{([canSubmit, isSubmitting]) => (
+								<div className="flex gap-3 pt-4">
+									<Button
+										type="submit"
+										disabled={!canSubmit}
+										className="flex-1"
+									>
+										{isSubmitting ? "Menyimpan..." : "Simpan Pasien"}
+									</Button>
+									<Button
+										type="button"
+										variant="secondary"
+										onClick={() => navigate({ to: "/patients" })}
+										disabled={isSubmitting}
+									>
+										Batal
+									</Button>
+								</div>
+							)}
+						</form.Subscribe>
+
 						{createResult.error && (
-							<div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-								<p className="text-red-600">
+							<div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+								<p className="text-destructive text-sm">
 									Error: {createResult.error.message}
 								</p>
 							</div>
 						)}
-
-						{/* Submit Buttons */}
-						<div className="flex gap-3 pt-4">
-							<Button
-								type="submit"
-								variant="primary"
-								isLoading={createResult.fetching}
-								className="flex-1"
-							>
-								Simpan Pasien
-							</Button>
-							<Button
-								type="button"
-								variant="secondary"
-								onClick={() => navigate({ to: "/patients" })}
-								disabled={createResult.fetching}
-							>
-								Batal
-							</Button>
-						</div>
 					</form>
-				</Card>
-			</div>
+				</CardPanel>
+			</Card>
 		</div>
 	);
+
+	// return (
+	// 	<div className="container mx-auto px-4 py-8 max-w-3xl">
+	// 		<Button
+	// 			variant="ghost"
+	// 			size="sm"
+	// 			onClick={() => navigate({ to: "/patients" })}
+	// 			className="mb-4"
+	// 		>
+	// 			<ArrowLeft className="w-4 h-4 mr-2" />
+	// 			Kembali ke Daftar
+	// 		</Button>
+
+	// 		<Card>
+	// 			<CardHeader>
+	// 				<CardTitle>Tambah Pasien Baru</CardTitle>
+	// 			</CardHeader>
+	// 			<CardPanel>
+	// 				<form
+	// 					onSubmit={(e) => {
+	// 						e.preventDefault();
+	// 						form.handleSubmit();
+	// 					}}
+	// 					className="space-y-6"
+	// 				>
+	// 					<form.Field
+	// 						name="name"
+	// 						children={(field) => {
+	// 							const isInvalid =
+	// 								field.state.meta.isTouched && !field.state.meta.isValid;
+	// 							return (
+	// 								<div>
+	// 									<label className="block text-sm font-medium mb-2">
+	// 										Nama Lengkap *
+	// 									</label>
+	// 									<InputGroup>
+	// 										<InputGroupInput
+	// 											name={field.name}
+	// 											value={field.state.value}
+	// 											onBlur={field.handleBlur}
+	// 											onChange={(e) => field.handleChange(e.target.value)}
+	// 											placeholder="Masukkan nama lengkap"
+	// 											aria-invalid={isInvalid}
+	// 										/>
+	// 									</InputGroup>
+	// 									{isInvalid && (
+	// 										<p className="text-sm text-destructive mt-1">
+	// 											{field.state.meta.errors.join(", ")}
+	// 										</p>
+	// 									)}
+	// 								</div>
+	// 							);
+	// 						}}
+	// 					/>
+
+	// 					<form.Field
+	// 						name="dateOfBirth"
+	// 						children={(field) => (
+	// 							<div>
+	// 								<label className="block text-sm font-medium mb-2">
+	// 									Tanggal Lahir
+	// 								</label>
+	// 								<InputGroup>
+	// 									<InputGroupInput
+	// 										name={field.name}
+	// 										value={field.state.value}
+	// 										onBlur={field.handleBlur}
+	// 										onChange={(e) => field.handleChange(e.target.value)}
+	// 										type="date"
+	// 									/>
+	// 								</InputGroup>
+	// 							</div>
+	// 						)}
+	// 					/>
+
+	// 					<form.Field
+	// 						name="phone"
+	// 						children={(field) => {
+	// 							const isInvalid =
+	// 								field.state.meta.isTouched && !field.state.meta.isValid;
+	// 							return (
+	// 								<div>
+	// 									<label className="block text-sm font-medium mb-2">
+	// 										Nomor Telepon
+	// 									</label>
+	// 									<InputGroup>
+	// 										<InputGroupInput
+	// 											name={field.name}
+	// 											value={field.state.value}
+	// 											onBlur={field.handleBlur}
+	// 											onChange={(e) => field.handleChange(e.target.value)}
+	// 											type="tel"
+	// 											placeholder="+62 812 3456 7890"
+	// 											aria-invalid={isInvalid}
+	// 										/>
+	// 									</InputGroup>
+	// 									{isInvalid && (
+	// 										<p className="text-sm text-destructive mt-1">
+	// 											{field.state.meta.errors.join(", ")}
+	// 										</p>
+	// 									)}
+	// 								</div>
+	// 							);
+	// 						}}
+	// 					/>
+
+	// 					<form.Field
+	// 						name="email"
+	// 						children={(field) => {
+	// 							const isInvalid =
+	// 								field.state.meta.isTouched && !field.state.meta.isValid;
+	// 							return (
+	// 								<div>
+	// 									<label className="block text-sm font-medium mb-2">
+	// 										Email
+	// 									</label>
+	// 									<InputGroup>
+	// 										<InputGroupInput
+	// 											name={field.name}
+	// 											value={field.state.value}
+	// 											onBlur={field.handleBlur}
+	// 											onChange={(e) => field.handleChange(e.target.value)}
+	// 											type="email"
+	// 											placeholder="email@example.com"
+	// 											aria-invalid={isInvalid}
+	// 										/>
+	// 									</InputGroup>
+	// 									{isInvalid && (
+	// 										<p className="text-sm text-destructive mt-1">
+	// 											{field.state.meta.errors.join(", ")}
+	// 										</p>
+	// 									)}
+	// 								</div>
+	// 							);
+	// 						}}
+	// 					/>
+
+	// 					<form.Field
+	// 						name="address"
+	// 						children={(field) => (
+	// 							<div>
+	// 								<label className="block text-sm font-medium mb-2">
+	// 									Alamat
+	// 								</label>
+	// 								<textarea
+	// 									name={field.name}
+	// 									value={field.state.value}
+	// 									onBlur={field.handleBlur}
+	// 									onChange={(e) => field.handleChange(e.target.value)}
+	// 									className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-background"
+	// 									rows={3}
+	// 									placeholder="Masukkan alamat lengkap"
+	// 								/>
+	// 							</div>
+	// 						)}
+	// 					/>
+
+	// 					<form.Field
+	// 						name="medicalHistory"
+	// 						children={(field) => (
+	// 							<div>
+	// 								<label className="block text-sm font-medium mb-2">
+	// 									Riwayat Medis
+	// 								</label>
+	// 								<textarea
+	// 									name={field.name}
+	// 									value={field.state.value}
+	// 									onBlur={field.handleBlur}
+	// 									onChange={(e) => field.handleChange(e.target.value)}
+	// 									className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-background"
+	// 									rows={4}
+	// 									placeholder="Alergi, penyakit kronis, dll."
+	// 								/>
+	// 							</div>
+	// 						)}
+	// 					/>
+
+	// 					{createResult.error && (
+	// 						<div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+	// 							<p className="text-destructive text-sm">
+	// 								Error: {createResult.error.message}
+	// 							</p>
+	// 						</div>
+	// 					)}
+
+	// 					<form.Subscribe
+	// 						selector={(state) => [state.canSubmit, state.isSubmitting]}
+	// 						children={([canSubmit, isSubmitting]) => (
+	// 							<div className="flex gap-3 pt-4">
+	// 								<Button
+	// 									type="submit"
+	// 									variant="default"
+	// 									disabled={!canSubmit}
+	// 									className="flex-1"
+	// 								>
+	// 									{isSubmitting ? "Menyimpan..." : "Simpan Pasien"}
+	// 								</Button>
+	// 								<Button
+	// 									type="button"
+	// 									variant="secondary"
+	// 									onClick={() => navigate({ to: "/patients" })}
+	// 									disabled={isSubmitting}
+	// 								>
+	// 									Batal
+	// 								</Button>
+	// 							</div>
+	// 						)}
+	// 					/>
+	// 				</form>
+	// 			</CardPanel>
+	// 		</Card>
+	// 	</div>
+	// );
 }

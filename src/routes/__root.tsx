@@ -8,10 +8,10 @@ import {
 	useRouteContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { Calendar, Home, Users, Workflow } from "lucide-react";
+import { Calendar, Users, Workflow } from "lucide-react";
 import { type Client, Provider } from "urql";
+import NavItem from "@/components/Nav";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
-
 import appCss from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<{
@@ -27,7 +27,7 @@ export const Route = createRootRouteWithContext<{
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Healthcare Scheduling System",
+				title: "Clinic Management System - Rata ID Technical Test",
 			},
 		],
 		links: [
@@ -59,52 +59,39 @@ function RootComponent() {
 	);
 }
 
-// Navigation Header Component
 function Navigation() {
 	const { user } = useAuth();
 
 	return (
-		<nav className="bg-white border-b border-gray-200 shadow-sm">
-			<div className="container mx-auto px-4">
+		<nav className="bg-white border-b border-gray-200">
+			<div className="container mx-auto px-4 max-w-6xl">
 				<div className="flex justify-between items-center h-16">
 					<div className="flex items-center gap-8">
 						<Link
 							to="/"
-							className="text-xl font-bold text-blue-600 flex items-center gap-2"
+							className="text-xl font-bold text-red-600 flex items-center gap-4"
 						>
-							<Home className="w-6 h-6" />
-							Healthcare System
+							<img src="/rata_logo.webp" alt="Logo" className="w-12 h-auto" />
+							Clinic Management System
 						</Link>
 
 						<div className="flex gap-4">
-							<Link
-								to="/patients"
-								className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-							>
-								<Users className="w-4 h-4" />
-								Pasien
-							</Link>
-							<Link
-								to="/calendar"
-								className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-							>
-								<Calendar className="w-4 h-4" />
-								Kalender
-							</Link>
-							<Link
-								to="/workflows"
-								className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-							>
-								<Workflow className="w-4 h-4" />
+							<NavItem to="/patients" icon={Users}>
+								Patients
+							</NavItem>
+							<NavItem to="/calendar" icon={Calendar}>
+								Calender
+							</NavItem>
+							<NavItem to="/workflows" icon={Workflow}>
 								Workflow
-							</Link>
+							</NavItem>
 						</div>
 					</div>
 
 					<div className="flex items-center gap-4">
 						<div className="text-sm text-gray-600">
 							<span className="font-medium">{user?.name}</span>
-							<span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+							<span className="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
 								{user?.role}
 							</span>
 						</div>

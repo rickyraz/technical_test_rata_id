@@ -7,6 +7,10 @@ import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
 const config = defineConfig({
+  server: {
+    // Ensure static files from public are served with correct MIME types
+    middlewareMode: false,
+  },
   plugins: [
     devtools(),
     nitro(),
@@ -18,6 +22,7 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  publicDir: 'public',
 })
 
 export default config

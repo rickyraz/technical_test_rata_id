@@ -3,7 +3,7 @@
  * Handles page navigation for paginated data
  */
 
-import { Button } from "./Button";
+import { Button } from "./button";
 
 interface PaginationProps {
 	currentPage: number;
@@ -24,7 +24,7 @@ export function Pagination({
 	const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
 	return (
-		<div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+		<div className="flex items-center justify-between py-3 border-t border-gray-200">
 			<div className="flex-1 flex justify-between sm:hidden">
 				<Button
 					variant="secondary"
@@ -68,7 +68,7 @@ export function Pagination({
 								onClick={() => onPageChange(page)}
 								className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
 									page === currentPage
-										? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+										? "z-10 bg-red-50 border-red-500 text-red-600"
 										: "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
 								}`}
 							>

@@ -77,7 +77,7 @@ type Patient {
   updatedAt: String!
 }
 
-
+# -----
 
 input ByDayInput {
   ordinal: Int
@@ -114,7 +114,8 @@ type DeleteResult {
   message: String
 }
 
-# 3. RESULT TYPES (sebelum dipakai di Query)
+# -----
+
 type PatientsResult {
   patients: [Patient!]!
   total: Int!
@@ -226,11 +227,15 @@ type Query {
   # Patients
   allPatients(search: String, limit: Int, offset: Int): PatientsResult!
   patient(id: ID!): Patient
+
   # Appointments
   appointmentsByPatient(patientId: ID!, fromDate: String!, toDate: String!): AppointmentsResult!
+  allAppointments(fromDate: String!, toDate: String!): AppointmentsResult!
+
   # Workflows
   allWorkflows(search: String, limit: Int, offset: Int): WorkflowsResult!
   workflow(id: ID!): Workflow
+  
   # Auth
   currentUser: User
 }

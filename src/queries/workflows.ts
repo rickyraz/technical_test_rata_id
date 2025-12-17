@@ -1,8 +1,3 @@
-/**
- * Workflow GraphQL Queries and Mutations
- * Handles clinic workflow management
- */
-
 import { graphql } from "../graphql";
 
 // Query: Get all workflows

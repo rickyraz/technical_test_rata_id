@@ -4,9 +4,8 @@
  * Implements role-based UI logic (e.g., staff cannot edit)
  */
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext, useState } from "react";
 import { graphql } from "../graphql";
-import { useQuery } from "urql";
 
 // Define user roles from GraphQL schema
 export type UserRole = "ADMIN" | "DOCTOR" | "STAFF";
@@ -27,27 +26,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // GraphQL query to get current user
-const CurrentUserQuery = graphql(`
-	query CurrentUser {
-		currentUser {
-			id
-			name
-			role
-		}
-	}
-`);
+// const CurrentUserQuery = graphql(`
+// 	query CurrentUser {
+// 		currentUser {
+// 			id
+// 			name
+// 			role
+// 		}
+// 	}
+// `);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-	// Mock user for demo - in real app, this would come from authentication
 	const [mockUser] = useState<User>({
 		id: "1",
-		name: "Dr. Admin",
+		name: "Ricky Raihan",
 		role: "ADMIN", // Change to "STAFF" to test read-only mode
 	});
-
-	// In a real app, you'd use the GraphQL query:
-	// const [result] = useQuery({ query: CurrentUserQuery });
-	// const user = result.data?.currentUser || null;
 
 	// Role-based permissions
 	const canEdit = mockUser?.role === "ADMIN" || mockUser?.role === "DOCTOR";

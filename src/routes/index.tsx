@@ -1,14 +1,8 @@
-/**
- * Home Page
- * Landing page with overview and quick links to main features
- * Animated with Motion One
- */
-
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Calendar, Users, Workflow, ArrowRight } from "lucide-react";
+import { ArrowRight, Calendar, Users, Workflow } from "lucide-react";
 import { animate } from "motion";
 import { useEffect, useRef } from "react";
-import { Card } from "../components/ui/Card";
+import { Card } from "@/components/ui/card";
 import { useAuth } from "../contexts/AuthContext";
 
 export const Route = createFileRoute("/")({
@@ -24,148 +18,94 @@ function HomePage() {
 		if (containerRef.current) {
 			animate(
 				containerRef.current,
-				{ opacity: [0, 1], y: [30, 0] },
-				{ duration: 0.5, easing: "ease-out" },
+				{
+					opacity: [0, 1],
+					transform: ["translateY(30px)", "translateY(0)"],
+				},
+				{ duration: 0.5 },
 			);
 		}
 	}, []);
 
 	const features = [
 		{
-			title: "Daftar Pasien",
+			title: "Patient List",
 			description:
-				"Kelola data pasien dengan fitur pencarian, pagination, dan detail lengkap",
+				"Manage patient data with search, pagination and complete detail features",
 			icon: Users,
 			link: "/patients",
-			color: "blue",
+			preview: "Hey, system! show me all patients",
 		},
 		{
-			title: "Kalender Janji Temu",
+			title: "Appointment Calendar",
 			description:
-				"Lihat jadwal appointment dalam tampilan harian, mingguan, atau bulanan",
+				"View appointment schedules in daily, weekly, or monthly views",
 			icon: Calendar,
 			link: "/calendar",
-			color: "green",
+			preview: "Show appointments for today",
 		},
 		{
 			title: "Workflow Builder",
-			description:
-				"Buat dan kelola alur kerja klinik dengan drag-and-drop",
+			description: "Create and manage clinic workflows with drag-and-drop",
 			icon: Workflow,
 			link: "/workflows",
-			color: "purple",
+			preview: "Create new clinic workflow",
 		},
 	];
 
 	return (
 		<div ref={containerRef} className="container mx-auto px-4 py-12 max-w-6xl">
-			{/* Hero Section */}
-			<div className="text-center mb-12">
-				<h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-					Healthcare Scheduling System
-				</h1>
-				<p className="text-xl text-gray-600 max-w-2xl mx-auto">
-					Sistem manajemen klinik yang membantu Anda mengelola pasien,
-					jadwal appointment, dan workflow dengan mudah
-				</p>
-			</div>
-
-			{/* User Info */}
 			{user && (
-				<Card className="mb-8 text-center">
-					<p className="text-lg">
-						Selamat datang,{" "}
-						<span className="font-semibold text-blue-600">{user.name}</span>!
+				<div className="mb-4">
+					<p className="text-4xl">
+						Welcome,{" "}
+						<span className="font-semibold text-[#bf0d1f]">{user.name}</span>!
 					</p>
-					<p className="text-gray-600 mt-1">
-						Role: <span className="font-medium">{user.role}</span>
-					</p>
-				</Card>
+				</div>
 			)}
 
-			{/* Features Grid */}
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-				{features.map((feature, index) => {
+				{features.map((feature) => {
 					const Icon = feature.icon;
-					const colorClasses = {
-						blue: "bg-blue-500 hover:bg-blue-600",
-						green: "bg-green-500 hover:bg-green-600",
-						purple: "bg-purple-500 hover:bg-purple-600",
-					}[feature.color];
 
 					return (
 						<Link
 							key={feature.title}
 							to={feature.link}
-							className="group"
-							style={{
-								animationDelay: `${index * 0.1}s`,
-							}}
+							className="group gap-8 mb-4 block"
 						>
-							<Card className="h-full transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+							<Card className="h-full p-6 rounded-2xl border border-gray-200 bg-white transition-all hover:shadow-md">
+								{/* Icon */}
 								<div
-									className={`w-12 h-12 ${colorClasses} rounded-lg flex items-center justify-center mb-4 transition-colors`}
+									className={`w-10 h-10 bg-[#75235e] hover:bg-red-900 rounded-lg flex items-center justify-center mb-4`}
 								>
-									<Icon className="w-6 h-6 text-white" />
+									<Icon className="w-5 h-5 text-white" />
 								</div>
-								<h3 className="text-xl font-semibold mb-2 group-hover:text-blue-600 transition-colors">
-									{feature.title}
-								</h3>
-								<p className="text-gray-600 mb-4">{feature.description}</p>
-								<div className="flex items-center text-blue-600 font-medium group-hover:gap-2 transition-all">
-									Lihat Detail
-									<ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+
+								{/* Title */}
+								<h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+
+								{/* Description */}
+								<p className="text-gray-600 text-sm mb-4">
+									{feature.description}
+								</p>
+
+								{/* Preview Bubble (seperti gambar) */}
+								<div className="mb-4">
+									<div className="inline-block bg-gray-100 border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700">
+										{feature.preview}
+									</div>
+								</div>
+
+								{/* CTA */}
+								<div className="flex items-center text-red-600 font-medium text-sm group-hover:gap-2 transition-all">
+									Try now
+									<ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
 								</div>
 							</Card>
 						</Link>
 					);
 				})}
-			</div>
-
-			{/* Tech Stack Info */}
-			<Card className="bg-gradient-to-r from-blue-50 to-purple-50">
-				<h2 className="text-2xl font-semibold mb-4">Tech Stack</h2>
-				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-					<div>
-						<p className="text-sm text-gray-600">Frontend</p>
-						<p className="font-medium">React 19</p>
-					</div>
-					<div>
-						<p className="text-sm text-gray-600">Router</p>
-						<p className="font-medium">TanStack Start</p>
-					</div>
-					<div>
-						<p className="text-sm text-gray-600">Styling</p>
-						<p className="font-medium">Tailwind CSS</p>
-					</div>
-					<div>
-						<p className="text-sm text-gray-600">API</p>
-						<p className="font-medium">GraphQL + URQL</p>
-					</div>
-					<div>
-						<p className="text-sm text-gray-600">State</p>
-						<p className="font-medium">gql.tada</p>
-					</div>
-					<div>
-						<p className="text-sm text-gray-600">Animation</p>
-						<p className="font-medium">Motion One</p>
-					</div>
-					<div>
-						<p className="text-sm text-gray-600">Drag & Drop</p>
-						<p className="font-medium">@dnd-kit/core</p>
-					</div>
-					<div>
-						<p className="text-sm text-gray-600">Runtime</p>
-						<p className="font-medium">Bun</p>
-					</div>
-				</div>
-			</Card>
-
-			{/* Footer */}
-			<div className="text-center mt-12 text-gray-600">
-				<p>
-					Build with ❤️ using modern web technologies
-				</p>
 			</div>
 		</div>
 	);

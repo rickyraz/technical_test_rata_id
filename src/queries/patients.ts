@@ -1,8 +1,3 @@
-/**
- * Patient GraphQL Queries and Mutations
- * Using gql.tada for type-safe GraphQL operations
- */
-
 import { graphql } from "../graphql";
 
 // Query: Get all patients with search and pagination
@@ -72,6 +67,24 @@ export const PatientAppointmentsQuery = graphql(`
 				note
 				isException
 				recurrenceId
+			}
+			total
+		}
+	}
+`);
+
+export const AllAppointmentsQuery = graphql(`
+	query AllAppointments($fromDate: String!, $toDate: String!) {
+		allAppointments(fromDate: $fromDate, toDate: $toDate) {
+			appointments {
+				id
+				patient {
+					id
+					name
+				}
+				startDateTime
+				endDateTime
+				note
 			}
 			total
 		}
